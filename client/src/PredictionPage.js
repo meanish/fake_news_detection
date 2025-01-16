@@ -1,10 +1,10 @@
 import React from 'react';
-import PredictionForm from './(components)/PredictionForm';
+import FakeNewsDetectionApp from './(components)/PredictionForm';
 
 const PredictionPage = () => {
     return (
         <main className="min-h-full">
-            <PredictionForm />
+            <FakeNewsDetectionApp />
         </main>
     );
 };

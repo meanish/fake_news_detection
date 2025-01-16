@@ -3,19 +3,30 @@ const path = require('path');
 
 const find = (req, res) => {
     const { news } = req.body;
-
+    console.log(news)
     console.log('Current directory:', __dirname);
     const pythonFilePath = path.join(__dirname, '../../model/predict.py');
     console.log('Python script path:', pythonFilePath);
+    const pythonProcess = spawn('python', [pythonFilePath, news]);
 
-    const pythonProcess = spawn('python', [news]);
     pythonProcess.stdout.on('data', (data) => {
         console.log('Python script output:', data.toString());
         try {
+            const response = JSON.parse(data.toString().trim());
+            let message = "";
+            switch (response[0]) {
+                case 1:
+                    message = "The news is classified as Real.";
+                    break;
+                case 0:
+                    message = "The news is classified as Fake.";
+                    break;
+                default:
+                    message = "Unexpected classification received.";
+            }
 
-            const response = JSON.parse(data.toString());
             console.log("Response:", response);
-            res.json({ success: true, data: response });
+            res.json({ success: true, data: response[0], message });
         } catch (error) {
             console.error('Error parsing Python response:', error);
             res.status(500).json({ success: false, message: 'Error parsing Python response' });

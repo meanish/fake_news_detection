@@ -1,159 +1,173 @@
-'use client'
+import React, { useState } from "react";
 
-import React, { useEffect, useState } from 'react';
-
-const PredictionForm = () => {
-    const [location, setLocation] = useState('');
-    const [selectloc, setselectLoc] = useState('');
-    const [sqft, setSqft] = useState('');
-    const [bath, setBath] = useState('1');
-    const [bhk, setBhk] = useState('');
-    const [predictions, setPredictions] = useState(null);
+const FakeNewsDetectionApp = () => {
+    const [inputText, setInputText] = useState(null);
+    const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
+    const analyzeText = async () => {
+        console.log(inputText)
+        if (inputText) {
+            setLoading(true);
+            setError(null);
+            setResult(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        const requestBody = { location: selectloc, sqft, bath, bhk };
+            try {
+                const response = await fetch(`${process.env.REACT_APP_BASE_URL}/predict/news`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ news: inputText }),
+                });
 
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/predict/price`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
+                if (!response.ok) {
+                    throw new Error("Failed to analyze News.");
+                }
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch predictions');
+                const res = await response.json();
+                if (res?.success) {
+                    console.log(res)
+                    setResult(res);
+                }
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
             }
-
-            const data = await response.json();
-            setPredictions(data.data);
-        } catch (error) {
-            console.error('Error fetching predictions:', error);
-            setPredictions({ error: 'Failed to fetch predictions. Please try again later.' });
-        } finally {
-            setLoading(false);
         }
+
     };
 
-    const resetAll = () => {
-        setselectLoc('');
-        setSqft('');
-        setBath('');
-        setBhk('');
-        setPredictions(null);
-    }
-
     return (
-        <div className="bg-gradient-to-r from-blue-100 to-teal-200 min-h-screen flex items-center justify-center py-4 px-4">
-            <div className="max-w-3xl w-full bg-white shadow-2xl rounded-2xl p-10">
-                <h1 className="text-3xl font-bold text-center text-gray-800 mb-6 font-serif">Bangalore City Real Estate Price Prediction</h1>
-                <p className="text-center text-gray-400 mb-8 text-base font-mono">Provide the property details to receive an estimated price prediction.</p>
-                <form onSubmit={handleSubmit} className="space-y-8">
-
-                    <div>
-                        <label htmlFor="location" className="block text-lg text-start font-medium text-gray-800">Location</label>
-                        <select
-                            id="location"
-                            value={selectloc}
-                            onChange={(e) => setselectLoc(e.target.value)}
-                            className="mt-2 border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300"
-                            required
-                        >
-                            <option value="" disabled>Select a location</option>
-                            {location && Object.values(location).map((loc, index) => (
-                                <option key={index} value={loc} className="capitalize bg-orange-50">{loc}</option>
-                            ))}
-                        </select>
+        <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-3xl border-t-4 border-blue-600">
+                <h1 className="text-4xl font-extrabold font-serif text-gray-500 text-center mb-6">
+                    Fake News Detection
+                </h1>
+                <textarea
+                    className="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-4 focus:ring-blue-200 focus:outline-none text-gray-700 mb-4 shadow-sm transition h-72"
+                    placeholder="Enter news to analyze..."
+                    rows="6"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                ></textarea>
+                <button
+                    onClick={analyzeText}
+                    className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition ${loading
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 shadow-md"
+                        }`}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></span>
+                            Analyzing...
+                        </div>
+                    ) : (
+                        "Analyze News"
+                    )}
+                </button>
+                <div className="news_source grid md:grid-cols-2 gap-10 my-16 px-6">
+                    <div className="trusted-news bg-white p-6 rounded-lg shadow-lg border-t-4 border-green-400">
+                        <h3 className="text-xl font-semibold text-green-400 mb-4">
+                            Trusted News Portals
+                        </h3>
+                        <ul className="list-disc text-start space-y-3 ml-6">
+                            <li>
+                                <a
+                                    href="https://www.bbc.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-green-700 underline hover:text-blue-900 transition duration-300"
+                                >
+                                    BBC News
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="https://www.cnn.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-green-700 underline hover:text-blue-900 transition duration-300"
+                                >
+                                    CNN
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="https://www.reuters.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-green-700 underline hover:text-blue-900 transition duration-300"
+                                >
+                                    Reuters
+                                </a>
+                            </li>
+                        </ul>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-10">
-                        <div>
-                            <label htmlFor="sqft" className="block text-lg font-medium text-start text-gray-800">Square Feet</label>
-                            <input
-                                type="number"
-                                id="sqft"
-                                value={sqft}
-                                onChange={(e) => setSqft(Math.max(0, e.target.value))}
-                                className="mt-2 border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="bath" className="block text-lg font-medium text-start text-gray-800">Bathrooms <span className="text-xs text-gray-300">ranges 1-3</span></label>
-                            <input
-                                type="number"
-                                id="bath"
-                                value={bath}
-                                onChange={(e) => setBath(Math.max(0, e.target.value))}
-                                min={1}
-                                max={60}
-                                className="mt-2 border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="bhk" className="block text-lg font-medium text-start text-gray-800">BHK <span className="text-xs text-gray-300">ranges 1-3</span></label>
-                            <input
-                                type="number"
-                                id="bhk"
-                                value={bhk}
-                                onChange={(e) => setBhk(Math.max(0, e.target.value))}
-                                className="mt-2 border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300"
-                                required
-                            />
-                        </div>
-
+                    <div className="fake-news bg-white p-6 rounded-lg shadow-lg border-t-4 border-red-500">
+                        <h3 className="text-xl font-semibold text-red-500 mb-4">
+                            Fake News Alerts
+                        </h3>
+                        <ul className="list-disc text-start mb-0 ml-6">
+                            <li>
+                                <a
+                                    href="https://www.snopes.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-red-700 underline hover:text-red-900 transition duration-300"
+                                >
+                                    Snopes
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="https://www.factcheck.org"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-red-700 underline hover:text-red-900 transition duration-300"
+                                >
+                                    FactCheck.org
+                                </a>
+                            </li>
+                        </ul>
                     </div>
+                </div>
 
-                    <div className="flex gap-4 mt-10">
-                        <button
-                            type="submit"
-                            className="w-full py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-300 ease-in-out"
-                            disabled={loading}
-                        >
-                            {loading ? ('Calculating...') : ('Get Price Prediction')}
-                        </button>
 
-                        <button
-                            type="button"
-                            onClick={() => resetAll()}
-                            className="w-full py-3 bg-orange-400 text-white font-semibold rounded-lg hover:bg-orange-600 transition duration-300 ease-in-out"
-                        >
-                            Reset
-                        </button>
-                    </div>
-                </form>
+                {result && (
+                    <div className="mt-6 p-6 bg-green-50 rounded-lg shadow-md border-l-4 border-green-600">
+                        <h2 className="text-2xl font-bold text-yellow-500 font-sans mb-2">Result</h2>
+                        <p className="text-gray-700 text-2xl font-bold">{result.message}</p>
 
-                {/* Predictions Result */}
-                {predictions && (
-                    <div className="mt-8 p-6 bg-white rounded-lg shadow-md">
-                        <h2 className="text-2xl font-semibold font-mono text-red-800">Predictions</h2>
-                        {predictions.error ? (
-                            <p className="text-red-500 mt-4">{predictions.error}</p>
-                        ) : (
-                            <pre className="mt-2 bg-gray-50 p-4 rounded-md border border-gray-200 overflow-auto"> The estimated price for the property details is approx. INR:{JSON.stringify(predictions, null, 2)} lakhs</pre>
-                        )}
                     </div>
                 )}
 
-                <div className="grid-cols-1 gap-4 grid items-center mt-5 md:grid-cols-2">
-                    <div className=" text-gray-700 text-sm text-center italic">Note: This model provides an accuracy of about <span className="text-green-700 font-bold">84%</span>.</div>
+                {error && (
+                    <div className="mt-6 p-6 bg-red-50 rounded-lg shadow-md border-l-4 border-red-600">
+                        <h2 className="text-xl font-bold text-red-800 mb-2">Error</h2>
+                        <p className="text-gray-700">{error}</p>
+                    </div>
+                )}
 
-                    <div className=" text-gray-500 text-sm text-center">This model is trained using data from <a href="https://www.kaggle.com/datasets/amitabhajoy/bengaluru-house-price-data" target="_blank" rel="noreferrer" className="text-orange-600 underline">this
-                        dataset</a>.</div>
+                <div class="mt-10 p-2 bg-gray-100 rounded-lg shadow-lg">
+                    <p class="text-gray-800">
+                        The model was trained using datasets available in
+                        <a href="https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline"> Kaggle Fake News Dataset</a>.
+                    </p>
                 </div>
+
+
 
             </div>
         </div>
 
+
     );
 };
 
-export default PredictionForm;
+export default FakeNewsDetectionApp;
